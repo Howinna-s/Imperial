@@ -19,11 +19,11 @@ library(cetcolor)
 setwd()
 rm(list = ls())
 ##########-------------------------------------------------------------------------
-##Calculate the 7 days average data
+##Calculate the 7 days moving average climate data
 ##########-------------------------------------------------------------------------
 #Import SWdown data
 data <- rast(list.files("D:/Climate data/1991/SWdown", pattern=".nc",full.names = T))
-#Summarized for the current day's data
+#Summarize for the current day's data
 hour2day_label <-  yday(ymd(str_split(time(data)," ",simplify = T)[,1]))
 single_day=c()
 for(i in unique(hour2day_label)){
@@ -36,7 +36,7 @@ names(single_day) <- unique(ymd(str_split(time(data)," ",simplify = T)[,1]))
 time(single_day) <- unique(ymd(str_split(time(data)," ",simplify = T)[,1]))
 writeCDF(single_day, filename="D:/Climate data/1991/SWdown_single_day.nc", overwrite=TRUE, varname="SWdown",
          longname="SWdown_WFDE5_CRU_1991_day", unit="W m-2")
-# averages are obtained at 7-day steps
+#Obtain 7-day steps average data
 rolled <- roll(single_day, n=7, "sum", "around", na.rm=TRUE)
 
 week_order <- isoweek(ymd(str_split(time(single_day)," ",simplify = T)[,1]))
@@ -46,13 +46,11 @@ single_week = tapp(rolled, index=week_order, fun=sum,cores=6)
 names(single_week) <- unique(week_order)
 writeCDF(single_week, filename="D:/Climate data/1991/SWdown_single_week.nc", overwrite=TRUE, varname="SWdown",
          longname="SWdown_WFDE5_CRU_1991_week", unit="W m-2")
-
 #Transfer to 0.5 degree
 tif <- rast("D:/Climate data/1991/yield_1991.tif")
 r <- tif
 res(r) <- 0.5
 r <- resample(tif, r)
-
 #Mask the area with tif
 r[r==0]=NA
 r[!is.na(r)]=1
@@ -66,16 +64,16 @@ writeCDF(single_week_mask, filename="D:/Climate data/1991/SWdown_single_week_mas
 nc_open("D:/Climate data/1991/SWdown_single_week_nc_crop1.nc")
 SWdown <- nc_open("D:/Climate data/1991/SWdown_single_week_nc_crop1.nc", write = TRUE)
 Rsw <- ncvar_get(SWdown, "SWdown")
-# Define kEC as a constant value
+#Define kEC as a constant value
 kEC <- 2.04-6 # μmol J^-1
-# Calculate PPFD
+#Calculate PPFD
 PPFD <- 3600 * 24 * 10^(-6) * Rsw * kEC
-# Save the updated data back to the NetCDF file
+#Save the updated data back to the NetCDF file
 writeRaster(PPFD, filename = "D:/Climate data/1991/PPFD_1991_global.nc", format = "CDF", overwrite = TRUE)
 
 #Import Tair data
 data <- rast(list.files("D:/Climate data/1991/Tair", pattern=".nc",full.names = T))
-#Summarized for the current day's data
+#Summarize for the current day's data
 hour2day_label <-  yday(ymd(str_split(time(data)," ",simplify = T)[,1]))
 single_day=c()
 for(i in unique(hour2day_label)){
@@ -88,13 +86,13 @@ names(single_day) <- unique(ymd(str_split(time(data)," ",simplify = T)[,1]))
 time(single_day) <- unique(ymd(str_split(time(data)," ",simplify = T)[,1]))
 writeCDF(single_day, filename="D:/Climate data/1991/Tair_single_day.nc", overwrite=TRUE, varname="Tair",
          longname="Tair_WFDE5_CRU_1991_day", unit="K")
-# averages are obtained at 7-day steps
-rolled <- roll(single_day, n=7, "sum", "around", na.rm=TRUE)
+#Obtain 7-day steps average data
+rolled <- roll(single_day, n=7, "mean", "around", na.rm=TRUE)
 
 week_order <- isoweek(ymd(str_split(time(single_day)," ",simplify = T)[,1]))
 week_order[which(week_order == 1)[which(week_order == 1)>7]] = max(week_order)+1
 
-single_week = tapp(rolled, index=week_order, fun=sum,cores=6)
+single_week = tapp(rolled, index=week_order, fun=mean,cores=6)
 names(single_week) <- unique(week_order)
 writeCDF(single_week, filename="D:/Climate data/1991/Tair_single_week.nc", overwrite=TRUE, varname="Tair",
          longname="Tair_WFDE5_CRU_1991_week", unit="K")
@@ -117,7 +115,7 @@ writeCDF(single_week_mask, filename="D:/Climate data/1991/Tair_single_week_mask.
 
 #Import Qair data
 data <- rast(list.files("D:/Climate data/1991/Qair", pattern=".nc",full.names = T))
-#Summarized for the current day's data
+#Summarize for the current day's data
 hour2day_label <-  yday(ymd(str_split(time(data)," ",simplify = T)[,1]))
 single_day=c()
 for(i in unique(hour2day_label)){
@@ -131,12 +129,12 @@ time(single_day) <- unique(ymd(str_split(time(data)," ",simplify = T)[,1]))
 writeCDF(single_day, filename="D:/Climate data/1991/Qair_single_day.nc", overwrite=TRUE, varname="Qair",
          longname="Qair_WFDE5_CRU_1991_day", unit="kg kg-1")
 # averages are obtained at 7-day steps
-rolled <- roll(single_day, n=7, "sum", "around", na.rm=TRUE)
+rolled <- roll(single_day, n=7, "mean", "around", na.rm=TRUE)
 
 week_order <- isoweek(ymd(str_split(time(single_day)," ",simplify = T)[,1]))
 week_order[which(week_order == 1)[which(week_order == 1)>7]] = max(week_order)+1
 
-single_week = tapp(rolled, index=week_order, fun=sum,cores=6)
+single_week = tapp(rolled, index=week_order, fun=mean,cores=6)
 names(single_week) <- unique(week_order)
 writeCDF(single_week, filename="D:/Climate data/1991/Qair_single_week.nc", overwrite=TRUE, varname="Qair",
          longname="Qair_WFDE5_CRU_1991_week", unit="kg kg-1")
@@ -200,7 +198,7 @@ writeCDF(single_week_mask, filename="D:/Climate data/1991/PSurf_single_week_mask
          varname="PSurf", longname="PSurf_WFDE5_CRU_1991_week", unit="Pa")
 
 ##########-------------------------------------------------------------------------
-##Run the PC model designed by Qiao Shengchao(qsc17@mails.tsinghua.edu.cn) and WANG Han
+##Run the PC model
 ##########-------------------------------------------------------------------------
 ##===================================
 ## define functions
@@ -568,6 +566,194 @@ cal_LAI_w <- function(Ta,PPFD_ac,VPD,CO2,elv=NA,patm=NA,pre, index){
   fAPAR <- ifelse(fAPAR>0.99,0.99,fAPAR)
   LAI_w <- log(1-fAPAR)/(-0.5)
   return(LAI_w)
+}
+##########-------------------------------------------------------------------------
+#Try with the main planting by PC model in a global grid
+##########-------------------------------------------------------------------------
+library(rnaturalearth)
+library(rnaturalearthdata)
+
+world <- ne_countries(scale = 110, returnclass = "sp")
+ss <- subset(world,continent !='Antarctica')
+
+source('PC_model.R')
+source('leaf_area_index_NP.R')
+
+grid_info <- data.frame(id='',lon='',lat='')
+
+climate_file <- list.files('../data/average1999-2016/')
+
+CO2_all <- 380
+year <- 2000
+size <- dim(grid_info)
+
+
+grid_info$plantDate_WW <- NA
+grid_info$GS_WW <- NA
+grid_info$PHU_WW <- NA
+grid_info$LAI_max_WW <- NA
+grid_info$GPP_max_WW <- NA
+
+grid_info$plantDate_SW <- NA
+grid_info$GS_SW <- NA
+grid_info$PHU_SW <- NA
+grid_info$LAI_max_SW <- NA
+grid_info$GPP_max_SW <- NA
+grid_info$PD_p <- NA
+
+Tmin <- 3
+Tmax <- 40
+Step <- 7
+
+
+
+for (i in 1:size[1]) {
+  
+  # read climate data
+  file_name <- paste0(grid_info$id[i],'.csv')
+  if (length(which(climate_file==file_name))==0){
+    next
+  }
+  
+  climate <- read.csv(paste0('../data/average1999-2016/',file_name))
+  if (is.na(climate$tas[100])){
+    next
+  }
+  
+  # select year 2000 and 2001
+  re_data <- rbind(climate,climate)
+  re_data$ta <- re_data$tas
+  re_data$ppfd <-   PPFD <- re_data$rsds*2.04*24*3600*1e-6
+  re_data$rh <- re_data$hurs
+  re_data$vpd <- cal_vpd(RH=re_data$rh,Ta=re_data$ta)
+  # calculate moving average
+  Tmo <- cal_moving(re_data$ta,mo=7)
+  if(mean(Tmo)<0){
+    next
+  }
+  # calculate plan of planting
+  plan <- cal_harvest1(Ta=Tmo, Step, lat = grid_info$lat[i])
+  plan$LAImax <- NA
+  plan$GPP_ac <- NA
+  plan$GPP_f <- NA
+  plan$mark_T <- NA
+  plan$mark_slope <- NA
+  plan$fver <- NA
+  
+  # prepare for modelling
+  for (p in 1:length(plan$plantDate)) {
+    ty <- plan$type[p]
+    if (ty=='Die'){
+      plan$mark_T[p] <- 1
+      next
+    }
+    plantDate <- plan$plantDate[p]
+    GS <- plan$length[p]
+    
+    if (is.na(GS)){
+      plan$mark_T[p] <- 1
+      next
+    }
+    
+    month_P <- sum(re_data$pr[(plantDate):(plantDate+29)])
+    heavy_rain <- length(which(re_data$pr[(plantDate):(plantDate+29)]>5))/30
+    
+    if (month_P < 5&heavy_rain > 0.2){
+      plan$mark_T[p] <- 1
+      next
+    }
+    
+    PHU <- plan$PHU[p]
+    test_data <- re_data[plantDate:(plantDate+GS-1),]
+    
+    # inputs
+    Ta <- cal_moving(test_data$ta,mo=7)
+    PPFD <- test_data$ppfd
+    VPD <- cal_moving(test_data$vpd,mo=7)
+    CO2 <- CO2_all
+    patm <- cal_moving(test_data$ps,mo=7)
+    alpha_ir <- 1.26
+    
+    fPHU <- cal_fPHU(Ta=Ta,Tmin,Tmax,ty)
+    
+    
+    inputs <- fPHU$phenology
+    inputs$PPFD <- PPFD
+    inputs$VPD <- VPD
+    inputs$CO2 <- CO2
+    inputs$patm <- patm
+    inputs$pre <- test_data$pr
+    
+    #ver_end <- min(which(inputs$fphu>=0.15))
+    #sen_st <- max(which(inputs$fphu<=0.7))
+    ver_end <- fPHU$period[1]
+    sen_st <- fPHU$period[2]
+    
+    
+    
+    PPFD_ac <- sum(inputs$PPFD[(ver_end+1) : sen_st])
+    pre <- sum(inputs$pre[(ver_end+1) : sen_st])
+    Ta_m <- mean(inputs$Ta_or[(ver_end+1) : sen_st])
+    VPD_m <- mean(inputs$VPD[(ver_end+1) : sen_st])
+    patm_m <- mean(inputs$patm[(ver_end+1) : sen_st])
+    CO2_m <- mean(inputs$CO2[(ver_end+1) :sen_st])
+    
+    # calculate yield under full irrigation
+    LAI_c <- cal_LAI_max(Ta = Ta_m, PPFD_ac = PPFD_ac, VPD = VPD_m, CO2 = CO2_m, patm = patm_m, alpha = alpha_ir, index = NA)
+    LAI_w <- cal_LAI_w(Ta = Ta_m, PPFD_ac = PPFD_ac, VPD = VPD_m, CO2 = CO2_m, patm = patm_m, pre = pre, index = 1)
+    LAI_ma <- min (LAI_c,LAI_w)
+    LAI <- inputs$fLAI*LAI_ma
+    fAPAR <- cal_fapar(LAI = LAI)
+    
+    GPP <- cal_gpp(fAPAR = fAPAR,Ta=Ta ,PPFD = PPFD,VPD = VPD,CO2 = CO2,patm = patm)
+    
+    plan$fver[p] <- fPHU$period[3]
+    plan$LAImax[p] <- LAI_ma
+    plan$GPP_ac[p] <-sum(GPP[Ta>=0])
+    plan$GPP_f[p] <- plan$GPP_ac[p]
+    
+  }
+  
+  if (length(na.omit(plan$GPP_f))!=0){
+    if (grid_info$type==1.5){
+      n_max <- which(plan$GPP_f==max(plan$GPP_f[plan$plantDate>=1&plan$plantDate<=180],na.rm = T))
+      grid_info$PD_p[i] <- plan$plantDate[n_max]
+    } else {
+      n_max <- which(plan$GPP_ac==max(plan$GPP_ac,na.rm = T))
+      grid_info$PD_p[i] <- plan$plantDate[n_max]
+    }
+    
+    if (grid_info$lat[i]>0) {
+      n_WW <- which(plan$GPP_f==max(plan$GPP_f[plan$plantDate>=243&plan$plantDate<=365],na.rm = T))
+      n_SW <- which(plan$GPP_f==max(plan$GPP_f[plan$plantDate>=1&plan$plantDate<=123],na.rm = T))
+    } else {
+      n_WW <- which(plan$GPP_f==max(plan$GPP_f[plan$plantDate>=181&plan$plantDate<=304],na.rm = T))
+      n_SW <- which(plan$GPP_f==max(plan$GPP_f[plan$plantDate>=60&plan$plantDate<=180],na.rm = T))
+    }
+    
+    if (length(na.omit(n_WW))!=0) {
+      grid_info$plantDate_WW[i] <- plan$plantDate[n_WW]
+      grid_info$GS_WW[i] <- plan$length[n_WW]
+      grid_info$PHU_WW[i] <- plan$PHU[n_WW]
+      grid_info$LAI_max_WW[i] <- plan$LAImax[n_WW]
+      grid_info$GPP_max_WW[i] <- plan$GPP_ac[n_WW]
+    }
+    
+    if (length(na.omit(n_SW))!=0) {
+      grid_info$plantDate_SW[i] <- plan$plantDate[n_SW]
+      grid_info$GS_SW[i] <- plan$length[n_SW]
+      grid_info$PHU_SW[i] <- plan$PHU[n_SW]
+      grid_info$LAI_max_SW[i] <- plan$LAImax[n_SW]
+      grid_info$GPP_max_SW[i] <- plan$GPP_ac[n_SW]
+    }
+    
+  }
+  
+  if (i%%100==0) {
+    print(i)
+  }
+  
+  
 }
 
 ##########-------------------------------------------------------------------------
